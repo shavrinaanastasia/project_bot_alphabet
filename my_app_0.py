@@ -9,7 +9,7 @@ from telebot import types
 import os
 import matplotlib.pyplot as plt
 
-
+# импортируем модель для генерации текста в 3 режиме
 
 model = GPT2LMHeadModel.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
 tokenizer = GPT2Tokenizer.from_pretrained("sberbank-ai/rugpt3small_based_on_gpt2")
@@ -18,6 +18,7 @@ symbols_dict = {"Ա": "А", "Բ": "Б", "Գ": "Г", "Դ": "Д", "Ե": "Е", "Զ"
 
 bot = telebot.TeleBot(conf.TOKEN)
 
+# это чтобы не возникало конфликтов с тем что висит на pythonanywhere
 bot.delete_webhook()
 
 print("Вебхук успешно удален.")
@@ -42,7 +43,7 @@ def start(message):
     is_bot_started = True
     bot.reply_to(message, "Здравствуйте! Это бот, который помогает учить армянский алфавит. Выберите режим: 1 (запоминание), 2 (тест), 3 (сложная игра) или 4 (образцы письменности, написанные от руки)")
 
-
+# две функции для стоп. вторая обрабатывает call. без нее 3 режим не будет корректно работать
 @bot.message_handler(commands=['stop'])
 def stop_handler(message):
     global is_bot_started, mode, score, scores, plots
@@ -55,7 +56,7 @@ def stop_handler(message):
     plt.xlabel('Режимы')
     plt.ylabel('Счет')
     plt.title('Счет игрока в разных режимах')
-    plt.savefig(f'plot_{plots}.png')  # Сохраняем график как изображение
+    plt.savefig(f'plot_{plots}.png')  # график как изображение
     with open(f'plot_{plots}.png', 'rb') as photo:
         bot.send_photo(message.chat.id, photo)
 
@@ -73,11 +74,11 @@ def stop_call_handler(call):
     plt.xlabel('Режимы')
     plt.ylabel('Счет')
     plt.title('Счет игрока в разных режимах')
-    plt.savefig(f'plot_{plots}.png')  # Сохраняем график как изображение
+    plt.savefig(f'plot_{plots}.png')  # график как изображение
     with open(f'plot_{plots}.png', 'rb') as photo:
         bot.send_photo(message.chat.id, photo)
 
-
+# обработка разных режимов
 @bot.message_handler(func=lambda message: is_bot_started and mode is None)
 def mode_handler(message):
     global mode
@@ -146,7 +147,7 @@ def translit_guess_handler(message):
     #sentence_generation(message)
     bot.register_next_step_handler(message, sentence_generation)
 
-
+# без костыля с ифом бот неправильно работает. если ввести стоп, когда наша очередь присылать слово, то упадет
 def sentence_generation(message):
     if message.text != "/stop":
         global transliterated, generated_text
@@ -203,6 +204,9 @@ def mode4(message):
 
     correct_answer = image_file[:-4]
     #bot.register_next_step_handler(message, check_answer, image_file[:-4])
+
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
